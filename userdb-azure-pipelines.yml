@@ -1,0 +1,46 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+name: $(Date:yyyyMMdd)-$(Rev:r)
+# name modifies the Build.BuildNumber format used in tag
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/process/run-number?view=azure-devops&tabs=yaml
+
+trigger:
+- master
+
+variables:
+
+  dockerfilePath: '**/docker/user-db/Dockerfile'
+  tag: '$(Build.BuildNumber)'
+  serviceName: userdb
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+  repositories:
+    - repository: microservicesdemo
+      type: github
+      name: northpoint/microservices-demo
+      endpoint: github-svcconn
+
+stages:
+- stage: DockerBuildPush
+  displayName: Docker Build & Push stage
+  jobs:  
+  - template: /pipeline-templates/docker-builddeploy-pipeline.yaml@microservicesdemo  # Template reference
+    parameters:
+      tag: $(tag)
+      acrRepo: $(serviceName)
+      dockerfilePath: $(dockerfilePath)
+      buildContext: $(Build.Repository.LocalPath)
+      
+- stage: HelmDeploy
+  displayName: Helm Deploy
+  jobs:
+  - template: /pipeline-templates/helm-deploy-pipeline.yaml@microservicesdemo
+    parameters:
+      serviceName: $(serviceName)
+      image: $(serviceName):$(tag)
