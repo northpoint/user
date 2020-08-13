@@ -27,6 +27,17 @@ resources:
       endpoint: github-svcconn
 
 stages:
+- stage: SecurityScan
+  displayName: Security Scan
+  jobs:
+  - job: SecurityScan
+    steps:
+    - template: /pipeline-templates/security-scan-pipeline.yaml@microservicesdemo
+      parameters:
+        projectKey: $(serviceName)
+        projectVersion: $(tag)
+        cliSources: $(Build.Repository.LocalPath)
+        
 - stage: DockerBuildPush
   displayName: Docker Build & Push stage
   jobs:  
